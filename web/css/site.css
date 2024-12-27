@@ -107,3 +107,7 @@ a.desc:after {
   color: #f5f5f5;
   text-decoration: underline;
 }
+
+.pagination .disabled {
+  display: none;
+}
