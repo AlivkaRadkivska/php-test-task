@@ -62,19 +62,13 @@ class SiteController extends BaseController
   public function actionIndex()
   {
     $model = new BookingFilterForm();
-    if ($model->load(Yii::$app->request->get())) {
-      $selectedYear = $model->year;
-      $selectedMonth = $model->month;
-      $registrationNumber = $model->registration_number;
-      $activeBooking = $model->active_booking;
-      $activeCar = $model->active_car;
-      $existingCar = $model->existing_car;
-    } else {
-      $selectedYear = date('Y');
-      $selectedMonth = date('m');
+
+    if (!$model->load(Yii::$app->request->get())) {
+      $model->year = date('Y');
+      $model->month = date('m');
     }
 
-    $startDate = $selectedYear . '-' . $selectedMonth . '-01';
+    $startDate = $model->year . '-' . $model->month . '-01';
     $endDate = date('Y-m-t', strtotime($startDate));
 
     $daysInMonth = date('t', strtotime($startDate));
@@ -99,20 +93,20 @@ class SiteController extends BaseController
       ->groupBy('rc_bookings.car_id')
       ->orderBy(['rc_bookings.car_id' => SORT_ASC]);
 
-    if (!empty($registrationNumber)) {
-      $query->andWhere(['like', 'rc_cars.registration_number', $registrationNumber]);
+    if (!empty($model->registration_number)) {
+      $query->andWhere(['like', 'rc_cars.registration_number', $model->registration_number]);
     }
 
-    if (!empty($activeBooking)) {
-      $query->andWhere(['=', 'rc_bookings.status', $activeBooking]);
+    if (!empty($model->active_booking)) {
+      $query->andWhere(['=', 'rc_bookings.status', $model->active_booking]);
     }
 
-    if (!empty($activeCar)) {
-      $query->andWhere(['=', 'rc_cars.status', $activeCar]);
+    if (!empty($model->active_car)) {
+      $query->andWhere(['=', 'rc_cars.status', $model->active_car]);
     }
 
-    if (!empty($existingCar)) {
-      $query->andWhere(['!=', 'rc_cars.is_deleted', $existingCar]);
+    if (!empty($model->existing_car)) {
+      $query->andWhere(['!=', 'rc_cars.is_deleted', $model->existing_car]);
     }
 
     $dataProvider = new ActiveDataProvider([

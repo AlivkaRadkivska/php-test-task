@@ -29,8 +29,12 @@ class BookingFilterForm extends Model
   public function attributeLabels()
   {
     return [
-      'year' => 'Select Year',
-      'month' => 'Select Month',
+      'year' => 'Select year',
+      'month' => 'Select month',
+      'registration_number' => 'Type registration number',
+      'active_booking' => 'Only active bookings',
+      'active_car' => 'Only active cars',
+      'existing_car' => 'Only existing cars',
     ];
   }
 }

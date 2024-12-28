@@ -28,7 +28,7 @@ $months = [
 $form = ActiveForm::begin([
   'method' => 'get',
   'action' => ['index'],
-  'options' => ['class' => 'row']
+  'options' => ['class' => 'form-group row align-items-center']
 ]); ?>
 
 <div class="col-md-4">
@@ -48,33 +48,30 @@ $form = ActiveForm::begin([
 <div class="col-md-4">
   <?= $form->field($model, 'registration_number')->textInput([
     'value' => $model->registration_number,
-    'placeholder' => 'Search by Registration Number',
+    'placeholder' => 'Search by registration number',
     'class' => 'form-control'
   ]) ?>
 </div>
 
-<div class="col-md-4">
+<div class="col-md-3">
   <?= $form->field($model, 'active_booking')->checkbox([
-    'label' => 'Only active bookings',
-    'checked' => $model->active_booking,
+    'checked' => $model->active_booking ? true : null,
   ]) ?>
 </div>
 
-<div class="col-md-4">
+<div class="col-md-3">
   <?= $form->field($model, 'active_car')->checkbox([
-    'label' => 'Only active cars',
-    'checked' => $model->active_car,
+    'checked' => $model->active_car ? true : null,
   ]) ?>
 </div>
 
-<div class="col-md-4">
+<div class="col-md-3">
   <?= $form->field($model, 'existing_car')->checkbox([
-    'label' => 'Only existing cars',
-    'checked' => $model->existing_car,
+    'checked' => $model->existing_car ? true : null,
   ]) ?>
 </div>
 
-<div class="form-group flex-auto justify-content-end">
+<div class="col-md-3">
   <?= Html::submitButton('Filter', ['class' => 'btn btn-primary']) ?>
 </div>
 
@@ -104,7 +101,7 @@ $form = ActiveForm::begin([
     <tbody>
       <?php foreach ($dataProvider->models as $index => $model): ?>
         <tr>
-          <td><?= $dataProvider->pagination->page * 20 + $index + 1 ?></td>
+          <td><?= $dataProvider->pagination->page * $dataProvider->pagination->pageSize + $index + 1 ?></td>
           <td><?= $model->car_id ?></td>
           <td><?= $model->car->registration_number ?></td>
           <td><?= $model->car->carTranslation ? $model->car->carTranslation->title : 'N/A' ?></td>
