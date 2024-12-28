@@ -1,6 +1,7 @@
 <?php
 
 use yii\helpers\Html;
+use yii\helpers\Url;
 use yii\widgets\LinkPager;
 use yii\widgets\ActiveForm;
 
@@ -23,63 +24,63 @@ $months = [
 ?>
 
 
-<p class="lead">Filtration and Searching</p>
-<?php
-$form = ActiveForm::begin([
-  'method' => 'get',
-  'action' => ['index'],
-  'options' => ['class' => 'form-group row align-items-center']
-]); ?>
+<div class="container">
+  <p class="lead">Filtration and Searching</p>
+  <?php
+  $form = ActiveForm::begin([
+    'method' => 'get',
+    'action' => ['index'],
+    'options' => ['class' => 'form-group row align-items-center']
+  ]); ?>
 
-<div class="col-md-4">
-  <?= $form->field($model, 'year')->dropDownList(
-    array_combine(range(date('Y') - 10, date('Y') + 10), range(date('Y') - 10, date('Y') + 10)),
-    ['value' => $model->year, 'class' => 'form-control']
-  ) ?>
-</div>
+  <div class="col-md-4">
+    <?= $form->field($model, 'year')->dropDownList(
+      array_combine(range(date('Y') - 10, date('Y') + 10), range(date('Y') - 10, date('Y') + 10)),
+      ['value' => $model->year, 'class' => 'form-control']
+    ) ?>
+  </div>
 
-<div class="col-md-4">
-  <?= $form->field($model, 'month')->dropDownList($months, [
-    'value' => $model->month,
-    'class' => 'form-control'
-  ]) ?>
-</div>
+  <div class="col-md-4">
+    <?= $form->field($model, 'month')->dropDownList($months, [
+      'value' => $model->month,
+      'class' => 'form-control'
+    ]) ?>
+  </div>
 
-<div class="col-md-4">
-  <?= $form->field($model, 'registration_number')->textInput([
-    'value' => $model->registration_number,
-    'placeholder' => 'Search by registration number',
-    'class' => 'form-control'
-  ]) ?>
-</div>
+  <div class="col-md-4">
+    <?= $form->field($model, 'registration_number')->textInput([
+      'value' => $model->registration_number,
+      'placeholder' => 'Search by registration number',
+      'class' => 'form-control'
+    ]) ?>
+  </div>
 
-<div class="col-md-3">
-  <?= $form->field($model, 'active_booking')->checkbox([
-    'checked' => $model->active_booking ? true : null,
-  ]) ?>
-</div>
+  <div class="col-md-3">
+    <?= $form->field($model, 'active_booking')->checkbox([
+      'checked' => $model->active_booking ? true : null,
+    ]) ?>
+  </div>
 
-<div class="col-md-3">
-  <?= $form->field($model, 'active_car')->checkbox([
-    'checked' => $model->active_car ? true : null,
-  ]) ?>
-</div>
+  <div class="col-md-3">
+    <?= $form->field($model, 'active_car')->checkbox([
+      'checked' => $model->active_car ? true : null,
+    ]) ?>
+  </div>
 
-<div class="col-md-3">
-  <?= $form->field($model, 'existing_car')->checkbox([
-    'checked' => $model->existing_car ? true : null,
-  ]) ?>
-</div>
+  <div class="col-md-3">
+    <?= $form->field($model, 'existing_car')->checkbox([
+      'checked' => $model->existing_car ? true : null,
+    ]) ?>
+  </div>
 
-<div class="col-md-3">
-  <?= Html::submitButton('Filter', ['class' => 'btn btn-primary']) ?>
-</div>
+  <div class="col-md-3">
+    <?= Html::submitButton('Filter', ['class' => 'btn btn-primary']) ?>
+  </div>
 
-<?php ActiveForm::end(); ?>
+  <?php ActiveForm::end(); ?>
 
 
 
-<div class="site-index">
   <table class="table table-striped table-bordered">
     <thead>
       <tr>
@@ -96,6 +97,7 @@ $form = ActiveForm::begin([
         <th>Service</th>
         <th>Free</th>
         <th>All</th>
+        <th>Details</th>
       </tr>
     </thead>
     <tbody>
@@ -110,6 +112,11 @@ $form = ActiveForm::begin([
           <td><?= $model->service_days ?></td>
           <td><?= $daysInMonth - $model->busy_days - $model->service_days ?></td>
           <td><?= $daysInMonth ?></td>
+          <td>
+            <?= HTML::a('Go', [
+              Url::toRoute(['site/view', 'car_id' => $model->car_id])
+            ]) ?>
+          </td>
         </tr>
       <?php endforeach; ?>
     </tbody>

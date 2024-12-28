@@ -8,6 +8,7 @@ use yii\filters\AccessControl;
 use yii\filters\VerbFilter;
 use app\models\Booking;
 use app\models\BookingFilterForm;
+use app\models\Car;
 use yii\data\ActiveDataProvider;
 
 class SiteController extends BaseController
@@ -120,6 +121,45 @@ class SiteController extends BaseController
       'dataProvider' => $dataProvider,
       'daysInMonth' => $daysInMonth,
       'model' => $model
+    ]);
+  }
+
+  /**
+   * actionView
+   *
+   * @param  mixed $car_id
+   * @return void
+   */
+  public function actionView($car_id)
+  {
+    $carQuery = Car::find()
+      ->select([])
+      ->joinWith([
+        'carTranslation' => function ($query) {
+          $query->andWhere(['rc_cars_translations.lang' => Yii::$app->language]);
+        },
+        'carModelTranslation' => function ($query) {
+          $query->andWhere(['rc_cars_models_translations.lang' => Yii::$app->language]);
+        },
+      ])
+      ->where(['=', 'rc_cars.car_id', $car_id])
+      ->one();
+
+    $bookingQuery = Booking::find()
+      ->select(['booking_id', 'start_date', 'end_date', 'status', 'TIMESTAMPDIFF(HOUR, start_date, end_date) AS hours_in_rent'])
+      ->where(['=', 'car_id', $car_id])
+      ->orderBy(['start_date' => SORT_DESC]);
+
+    $dataProvider = new ActiveDataProvider([
+      'query' => $bookingQuery,
+      'pagination' => [
+        'pageSize' => 10
+      ],
+    ]);
+
+    return $this->render('view', [
+      'carDetails' => $carQuery,
+      'dataProvider' => $dataProvider,
     ]);
   }
 }

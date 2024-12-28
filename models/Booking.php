@@ -79,6 +79,13 @@ class Booking extends \yii\db\ActiveRecord
   public $service_days = 0;
 
   /**
+   * Virtual variable $hours_in_rent
+   *
+   * @var int
+   */
+  public $hours_in_rent = 0;
+
+  /**
    * {@inheritdoc}
    */
   public static function tableName()
