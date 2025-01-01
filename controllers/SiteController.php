@@ -67,6 +67,9 @@ class SiteController extends BaseController
     if (!$model->load(Yii::$app->request->get())) {
       $model->year = date('Y');
       $model->month = date('m');
+      $model->active_booking = true;
+      $model->active_car = true;
+      $model->existing_car = true;
     }
 
     $startDate = $model->year . '-' . $model->month . '-01';
@@ -77,8 +80,7 @@ class SiteController extends BaseController
     $query = Booking::find()
       ->select([
         'rc_bookings.car_id',
-        new Expression('SUM(CASE WHEN TIMESTAMPDIFF(HOUR, start_date, end_date) >= 9 THEN DATEDIFF(end_date, start_date) ELSE 0 END) AS busy_days'),
-        new Expression('SUM(CASE WHEN TIMESTAMPDIFF(HOUR, start_date, end_date) < 9 THEN 1 ELSE 0 END) AS service_days'),
+        "CONCAT('[', GROUP_CONCAT(CONCAT('{\"start_date\":\"', start_date, '\",\"end_date\":\"', end_date, '\"}') ORDER BY start_date SEPARATOR ','), ']') as rental_dates"
       ])
       ->joinWith([
         'car',
@@ -93,6 +95,7 @@ class SiteController extends BaseController
       ->andWhere(['<=', 'end_date', $endDate])
       ->groupBy('rc_bookings.car_id')
       ->orderBy(['rc_bookings.car_id' => SORT_ASC]);
+
 
     if (!empty($model->registration_number)) {
       $query->andWhere(['like', 'rc_cars.registration_number', $model->registration_number]);

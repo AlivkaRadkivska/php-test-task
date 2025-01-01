@@ -94,27 +94,25 @@ $months = [
         <th>Car Name</th>
         <th>Car Model</th>
         <th>Busy</th>
-        <th>Service</th>
         <th>Free</th>
         <th>All</th>
         <th>Details</th>
       </tr>
     </thead>
     <tbody>
-      <?php foreach ($dataProvider->models as $index => $model): ?>
+      <?php foreach ($dataProvider->models as $index => $bookingModel): ?>
         <tr>
           <td><?= $dataProvider->pagination->page * $dataProvider->pagination->pageSize + $index + 1 ?></td>
-          <td><?= $model->car_id ?></td>
-          <td><?= $model->car->registration_number ?></td>
-          <td><?= $model->car->carTranslation ? $model->car->carTranslation->title : 'N/A' ?></td>
-          <td><?= $model->car->carModelTranslation ? $model->car->carModelTranslation->name : 'N/A' ?></td>
-          <td><?= $model->busy_days ?></td>
-          <td><?= $model->service_days ?></td>
-          <td><?= $daysInMonth - $model->busy_days - $model->service_days ?></td>
+          <td><?= $bookingModel->car_id ?></td>
+          <td><?= $bookingModel->car->registration_number ?></td>
+          <td><?= $bookingModel->car->carTranslation ? $bookingModel->car->carTranslation->title : 'N/A' ?></td>
+          <td><?= $bookingModel->car->carModelTranslation ? $bookingModel->car->carModelTranslation->name : 'N/A' ?></td>
+          <td><?= $busyDays = $bookingModel->getBusyDaysWithinMonth($model->year, $model->month, json_decode($bookingModel->rental_dates, true)) ?></td>
+          <td><?= $daysInMonth - $busyDays ?></td>
           <td><?= $daysInMonth ?></td>
           <td>
             <?= HTML::a('Go', [
-              Url::toRoute(['site/view', 'car_id' => $model->car_id])
+              Url::toRoute(['site/view', 'car_id' => $bookingModel->car_id])
             ]) ?>
           </td>
         </tr>

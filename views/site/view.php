@@ -42,7 +42,7 @@ $this->title = "Car $carDetails->car_id bookings";
           <td><?= $model->booking_id ?></td>
           <td><?= $model->start_date ?></td>
           <td><?= $model->end_date ?></td>
-          <td><?= $model->hours_in_rent ?> h</td>
+          <td><?= $model->getBusyDaysWithinRentalPeriod(new DateTime($model->start_date), new DateTime($model->end_date)) ?> d</td>
           <td><?= $model->status ? 'active' : '-' ?></td>
         </tr>
       <?php endforeach; ?>

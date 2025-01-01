@@ -2,7 +2,7 @@
 
 namespace app\models;
 
-use Yii;
+use DateTime;
 
 /**
  * This is the model class for table "rc_bookings".
@@ -58,32 +58,11 @@ use Yii;
 class Booking extends \yii\db\ActiveRecord
 {
   /**
-   * Virtual variable $busy_days
+   * Virtual variable $rental_dates
    *
-   * @var int
+   * @var array
    */
-  public $busy_days = 0;
-
-  /**
-   * Virtual variable $free_days
-   *
-   * @var int
-   */
-  public $free_days = 0;
-
-  /**
-   * Virtual variable $service_days
-   *
-   * @var int
-   */
-  public $service_days = 0;
-
-  /**
-   * Virtual variable $hours_in_rent
-   *
-   * @var int
-   */
-  public $hours_in_rent = 0;
+  public $rental_dates = [];
 
   /**
    * {@inheritdoc}
@@ -120,13 +99,77 @@ class Booking extends \yii\db\ActiveRecord
     return $this->hasOne(Car::class, ['car_id' => 'car_id']);
   }
 
-  public function getTotalBookedHours()
+  /**
+   * getBusyDaysWithinRentalPeriod
+   *
+   * @param  mixed $rentalStart
+   * @param  mixed $rentalEnd
+   * @return int
+   */
+  public function getBusyDaysWithinRentalPeriod($rentalStart, $rentalEnd): int
   {
-    if ($this->start_date && $this->end_date) {
-      return (int) (strtotime($this->end_date) - strtotime($this->start_date)) / 3600;
+    $days = 0;
+
+    // Loop through each day within the rental period
+    $currentDate = $rentalStart;
+    while ($currentDate <= $rentalEnd) {
+      // Determine the start time and end time of the current day
+      $dayEnd = (clone $currentDate)->setTime(21, 0);
+      if ($currentDate->format('Y-m-d') === $rentalEnd->format('Y-m-d')) {
+        $dayEnd = clone $rentalEnd;
+      }
+
+      $dayStart = (clone $currentDate)->setTime(9, 0);
+      if ($dayStart < $rentalStart) {
+        $dayStart = clone $rentalStart;
+      }
+
+      // Calculations
+      $hoursBusy = ($dayEnd > $dayStart) ? $dayEnd->diff($dayStart)->h : 0;
+      if ($hoursBusy > 3) {
+        $days++;
+      }
+
+      $currentDate->modify('+1 day')->setTime(0, 0);
     }
 
-    return 0;
+    return $days;
+  }
+
+  /**
+   * getBusyDaysWithinMonth
+   *
+   * @param  int $year
+   * @param  int $month
+   * @param  array $rentalDates
+   * @return int
+   */
+  public function getBusyDaysWithinMonth($year, $month, $rentalDates): int
+  {
+    $busyDaysArray = [];
+
+    // Loop through each rental period within the given month and year
+    foreach ($rentalDates as $rentalDate) {
+      $startOfMonth = new DateTime("$year-$month-01");
+      $endOfMonth = (clone $startOfMonth)->modify('last day of this month 23:59:59');
+
+      $rentalStart = new DateTime($rentalDate['start_date']);
+      $rentalEnd = new DateTime($rentalDate['end_date']);
+
+      // Border rental period
+      if ($rentalStart < $startOfMonth) {
+        $rentalStart = clone $startOfMonth;
+      }
+
+      if ($rentalEnd > $endOfMonth) {
+        $rentalEnd = clone $endOfMonth;
+      }
+
+      $busyDaysArray[$rentalDate['start_date'] . "  -  " . $rentalDate['end_date']] =
+        $this->getBusyDaysWithinRentalPeriod($rentalStart, $rentalEnd);
+    }
+
+    return array_sum(array_values($busyDaysArray));
   }
 
   /**
