@@ -109,6 +109,8 @@ class Booking extends \yii\db\ActiveRecord
   public function getBusyDaysWithinRentalPeriod($rentalStart, $rentalEnd): int
   {
     $days = 0;
+    $startDayBorder = '18:00';
+    $endDayBorder = '12:00';
 
     // Loop through each day within the rental period
     $currentDate = $rentalStart;
@@ -124,9 +126,9 @@ class Booking extends \yii\db\ActiveRecord
         $dayStart = clone $rentalStart;
       }
 
-      // Calculations
-      $hoursBusy = ($dayEnd > $dayStart) ? $dayEnd->diff($dayStart)->h : 0;
-      if ($hoursBusy > 3) {
+      // Check if rental date broke 9-hour business day
+      // To make day free - booking should start no earlier than 18:00 and end no later than 12:00
+      if ($dayStart->format('H:i') < $startDayBorder && $dayEnd->format('H:i') > $endDayBorder) {
         $days++;
       }
 
@@ -137,26 +139,27 @@ class Booking extends \yii\db\ActiveRecord
   }
 
   /**
-   * getBusyDaysWithinMonth
+   * getDaysCalculations
    *
    * @param  int $year
    * @param  int $month
    * @param  array $rentalDates
-   * @return int
+   * @return array
    */
-  public function getBusyDaysWithinMonth($year, $month, $rentalDates): int
+  public function getDaysCalculations($year, $month, $rentalDates): array
   {
+    $startOfMonth = new DateTime("$year-$month-01");
+    $endOfMonth = (clone $startOfMonth)->modify('first day of next month');
+
     $busyDaysArray = [];
+    $serviceDaysArray = [];
 
     // Loop through each rental period within the given month and year
     foreach ($rentalDates as $rentalDate) {
-      $startOfMonth = new DateTime("$year-$month-01");
-      $endOfMonth = (clone $startOfMonth)->modify('last day of this month 23:59:59');
-
       $rentalStart = new DateTime($rentalDate['start_date']);
       $rentalEnd = new DateTime($rentalDate['end_date']);
 
-      // Border rental period
+      // Border rental period inside of selected month
       if ($rentalStart < $startOfMonth) {
         $rentalStart = clone $startOfMonth;
       }
@@ -165,11 +168,25 @@ class Booking extends \yii\db\ActiveRecord
         $rentalEnd = clone $endOfMonth;
       }
 
-      $busyDaysArray[$rentalDate['start_date'] . "  -  " . $rentalDate['end_date']] =
-        $this->getBusyDaysWithinRentalPeriod($rentalStart, $rentalEnd);
+      // Sum rental days depending on renting source
+      if ($rentalDate['source'] == 'car-service') {
+        $serviceDaysArray[$rentalDate['start_date'] . " - " . $rentalDate['end_date']] =
+          $this->getBusyDaysWithinRentalPeriod($rentalStart, $rentalEnd);
+      } else {
+        $busyDaysArray[$rentalDate['start_date'] . " - " . $rentalDate['end_date']] =
+          $this->getBusyDaysWithinRentalPeriod($rentalStart, $rentalEnd);
+      }
     }
 
-    return array_sum(array_values($busyDaysArray));
+    // Joining all the results
+    $result = [
+      'busy_days' => array_sum(array_values($busyDaysArray)),
+      'service_days' => array_sum(array_values($serviceDaysArray)),
+      'all_days' => date('t', $startOfMonth->getTimestamp()),
+    ];
+    $result['free_days'] = $result['all_days'] - $result['busy_days'] - $result['service_days'];
+
+    return $result;
   }
 
   /**

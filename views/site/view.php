@@ -32,19 +32,16 @@ $this->title = "Car $carDetails->car_id bookings";
         <th>Start date</th>
         <th>End date</th>
         <th>Has been rent for</th>
+        <th>Source</th>
         <th>Status</th>
       </tr>
     </thead>
     <tbody>
       <?php foreach ($dataProvider->models as $index => $model): ?>
-        <tr>
-          <td><?= $dataProvider->pagination->page * $dataProvider->pagination->pageSize + $index + 1 ?></td>
-          <td><?= $model->booking_id ?></td>
-          <td><?= $model->start_date ?></td>
-          <td><?= $model->end_date ?></td>
-          <td><?= $model->getBusyDaysWithinRentalPeriod(new DateTime($model->start_date), new DateTime($model->end_date)) ?> d</td>
-          <td><?= $model->status ? 'active' : '-' ?></td>
-        </tr>
+        <?= $this->render('template-parts/_details_booking_row', [
+          'index' => $dataProvider->pagination->page * $dataProvider->pagination->pageSize + $index + 1,
+          'model' => $model,
+        ]) ?>
       <?php endforeach; ?>
     </tbody>
   </table>

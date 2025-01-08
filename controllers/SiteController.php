@@ -3,7 +3,7 @@
 namespace app\controllers;
 
 use Yii;
-use yii\db\Expression;
+use DateTime;
 use yii\filters\AccessControl;
 use yii\filters\VerbFilter;
 use app\models\Booking;
@@ -62,25 +62,23 @@ class SiteController extends BaseController
    */
   public function actionIndex()
   {
-    $model = new BookingFilterForm();
+    $bookingFilterModel = new BookingFilterForm();
 
-    if (!$model->load(Yii::$app->request->get())) {
-      $model->year = date('Y');
-      $model->month = date('m');
-      $model->active_booking = true;
-      $model->active_car = true;
-      $model->existing_car = true;
+    if (!$bookingFilterModel->load(Yii::$app->request->get())) {
+      $bookingFilterModel->year = date('Y');
+      $bookingFilterModel->month = date('m');
+      $bookingFilterModel->active_booking = true;
+      $bookingFilterModel->active_car = true;
+      $bookingFilterModel->existing_car = true;
     }
 
-    $startDate = $model->year . '-' . $model->month . '-01';
-    $endDate = date('Y-m-t', strtotime($startDate));
-
-    $daysInMonth = date('t', strtotime($startDate));
+    $startOfMonth = new DateTime("$bookingFilterModel->year-$bookingFilterModel->month-01");
+    $endOfMonth = (clone $startOfMonth)->modify('first day of next month');
 
     $query = Booking::find()
       ->select([
         'rc_bookings.car_id',
-        "CONCAT('[', GROUP_CONCAT(CONCAT('{\"start_date\":\"', start_date, '\",\"end_date\":\"', end_date, '\"}') ORDER BY start_date SEPARATOR ','), ']') as rental_dates"
+        "CONCAT('[', GROUP_CONCAT(CONCAT('{\"start_date\":\"', start_date, '\",\"end_date\":\"', end_date, '\",\"source\":\"', source, '\"}') ORDER BY start_date SEPARATOR ','), ']') as rental_dates"
       ])
       ->joinWith([
         'car',
@@ -91,26 +89,26 @@ class SiteController extends BaseController
           $query->andWhere(['rc_cars_models_translations.lang' => Yii::$app->language]);
         },
       ])
-      ->where(['>=', 'start_date', $startDate])
-      ->andWhere(['<=', 'end_date', $endDate])
+      ->where(['<', 'start_date', $endOfMonth->format('Y:m:d H:i:s')])
+      ->andWhere(['>', 'end_date', $startOfMonth->format('Y:m:d H:i:s')])
       ->groupBy('rc_bookings.car_id')
       ->orderBy(['rc_bookings.car_id' => SORT_ASC]);
 
 
-    if (!empty($model->registration_number)) {
-      $query->andWhere(['like', 'rc_cars.registration_number', $model->registration_number]);
+    if (!empty($bookingFilterModel->registration_number)) {
+      $query->andWhere(['like', 'rc_cars.registration_number', $bookingFilterModel->registration_number]);
     }
 
-    if (!empty($model->active_booking)) {
-      $query->andWhere(['=', 'rc_bookings.status', $model->active_booking]);
+    if (!empty($bookingFilterModel->active_booking)) {
+      $query->andWhere(['=', 'rc_bookings.status', $bookingFilterModel->active_booking]);
     }
 
-    if (!empty($model->active_car)) {
-      $query->andWhere(['=', 'rc_cars.status', $model->active_car]);
+    if (!empty($bookingFilterModel->active_car)) {
+      $query->andWhere(['=', 'rc_cars.status', $bookingFilterModel->active_car]);
     }
 
-    if (!empty($model->existing_car)) {
-      $query->andWhere(['!=', 'rc_cars.is_deleted', $model->existing_car]);
+    if (!empty($bookingFilterModel->existing_car)) {
+      $query->andWhere(['!=', 'rc_cars.is_deleted', $bookingFilterModel->existing_car]);
     }
 
     $dataProvider = new ActiveDataProvider([
@@ -122,8 +120,7 @@ class SiteController extends BaseController
 
     return $this->render('index', [
       'dataProvider' => $dataProvider,
-      'daysInMonth' => $daysInMonth,
-      'model' => $model
+      'bookingFilterModel' => $bookingFilterModel
     ]);
   }
 
@@ -149,14 +146,14 @@ class SiteController extends BaseController
       ->one();
 
     $bookingQuery = Booking::find()
-      ->select(['booking_id', 'start_date', 'end_date', 'status', 'TIMESTAMPDIFF(HOUR, start_date, end_date) AS hours_in_rent'])
+      ->select(['booking_id', 'start_date', 'end_date', 'source', 'status', 'TIMESTAMPDIFF(HOUR, start_date, end_date) AS hours_in_rent'])
       ->where(['=', 'car_id', $car_id])
-      ->orderBy(['start_date' => SORT_DESC]);
+      ->orderBy(['start_date' => SORT_ASC]);
 
     $dataProvider = new ActiveDataProvider([
       'query' => $bookingQuery,
       'pagination' => [
-        'pageSize' => 10
+        'pageSize' => 20
       ],
     ]);
 
