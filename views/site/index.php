@@ -30,7 +30,7 @@ $months = [
     <thead>
       <tr>
         <th colspan="5">Car Details</th>
-        <th colspan="4"><?= $months[$bookingFilterModel->month] . " " . $bookingFilterModel->year ?> days</th>
+        <th colspan="5"><?= $months[$bookingFilterModel->month] . " " . $bookingFilterModel->year ?></th>
       </tr>
       <tr>
         <th>#</th>

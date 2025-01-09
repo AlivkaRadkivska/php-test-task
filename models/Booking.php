@@ -57,6 +57,11 @@ use DateTime;
  */
 class Booking extends \yii\db\ActiveRecord
 {
+  const START_DAY_BORDER = '18:00';
+  const END_DAY_BORDER = '12:00';
+  const BUSINESS_DAY_START = '09:00';
+  const BUSINESS_DAY_END = '21:00';
+
   /**
    * Virtual variable $rental_dates
    *
@@ -109,26 +114,24 @@ class Booking extends \yii\db\ActiveRecord
   public function getBusyDaysWithinRentalPeriod($rentalStart, $rentalEnd): int
   {
     $days = 0;
-    $startDayBorder = '18:00';
-    $endDayBorder = '12:00';
 
     // Loop through each day within the rental period
     $currentDate = $rentalStart;
     while ($currentDate <= $rentalEnd) {
       // Determine the start time and end time of the current day
-      $dayEnd = (clone $currentDate)->setTime(21, 0);
+      $dayEnd = (clone $currentDate)->setTime(...explode(':', self::BUSINESS_DAY_END));
       if ($currentDate->format('Y-m-d') === $rentalEnd->format('Y-m-d')) {
         $dayEnd = clone $rentalEnd;
       }
 
-      $dayStart = (clone $currentDate)->setTime(9, 0);
+      $dayStart = (clone $currentDate)->setTime(...explode(':', self::BUSINESS_DAY_START));
       if ($dayStart < $rentalStart) {
         $dayStart = clone $rentalStart;
       }
 
       // Check if rental date broke 9-hour business day
       // To make day free - booking should start no earlier than 18:00 and end no later than 12:00
-      if ($dayStart->format('H:i') < $startDayBorder && $dayEnd->format('H:i') > $endDayBorder) {
+      if ($dayStart->format('H:i') < self::START_DAY_BORDER && $dayEnd->format('H:i') > self::END_DAY_BORDER) {
         $days++;
       }
 

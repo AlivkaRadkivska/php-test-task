@@ -13,7 +13,7 @@ use yii\widgets\ActiveForm;
 
 <div class="col-md-4">
   <?= $form->field($model, 'year')->dropDownList(
-    range(date('Y') - 10, date('Y') + 10),
+    array_combine(range(date('Y') - 10, date('Y') + 10), range(date('Y') - 10, date('Y') + 10)),
     ['value' => $model->year, 'class' => 'form-control']
   ) ?>
 </div>
