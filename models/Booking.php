@@ -111,7 +111,7 @@ class Booking extends \yii\db\ActiveRecord
    * @param  mixed $rentalEnd
    * @return int
    */
-  public function getBusyDaysWithinRentalPeriod($rentalStart, $rentalEnd): int
+  public function getBusyDaysWithinRentalPeriod($rentalStart, $rentalEnd, $nextRentalStart = null): int
   {
     $days = 0;
 
@@ -133,6 +133,21 @@ class Booking extends \yii\db\ActiveRecord
       // To make day free - booking should start no earlier than 18:00 and end no later than 12:00
       if ($dayStart->format('H:i') < self::START_DAY_BORDER && $dayEnd->format('H:i') > self::END_DAY_BORDER) {
         $days++;
+      } else if (
+        $nextRentalStart !== null &&
+        // Ensure the next rental is on the same day
+        $nextRentalStart->format('Y-m-d') === $currentDate->format('Y-m-d')
+      ) {
+        // Check hours gap ensuring business day bounds
+        if (
+          $dayEnd->format('H:i') > self::BUSINESS_DAY_START &&
+          $nextRentalStart->format('H:i') < self::BUSINESS_DAY_END &&
+          $dayEnd->diff($nextRentalStart)->h < 9 &&
+          // Exclude if day will be counted the next iteration
+          $nextRentalStart->format('H:i') > self::START_DAY_BORDER
+        ) {
+          $days++;
+        }
       }
 
       $currentDate->modify('+1 day')->setTime(0, 0);
@@ -158,7 +173,7 @@ class Booking extends \yii\db\ActiveRecord
     $serviceDaysArray = [];
 
     // Loop through each rental period within the given month and year
-    foreach ($rentalDates as $rentalDate) {
+    foreach ($rentalDates as $index => $rentalDate) {
       $rentalStart = new DateTime($rentalDate['start_date']);
       $rentalEnd = new DateTime($rentalDate['end_date']);
 
@@ -171,13 +186,18 @@ class Booking extends \yii\db\ActiveRecord
         $rentalEnd = clone $endOfMonth;
       }
 
+      // Determine the next rental's start date
+      $nextRentalStart = isset($rentalDates[$index + 1]) && $rentalDates[$index + 1]['source'] != 'car-service'
+        ? new DateTime($rentalDates[$index + 1]['start_date'])
+        : null;
+
       // Sum rental days depending on renting source
       if ($rentalDate['source'] == 'car-service') {
         $serviceDaysArray[$rentalDate['start_date'] . " - " . $rentalDate['end_date']] =
-          $this->getBusyDaysWithinRentalPeriod($rentalStart, $rentalEnd);
+          $this->getBusyDaysWithinRentalPeriod($rentalStart, $rentalEnd, $nextRentalStart ?? null);
       } else {
         $busyDaysArray[$rentalDate['start_date'] . " - " . $rentalDate['end_date']] =
-          $this->getBusyDaysWithinRentalPeriod($rentalStart, $rentalEnd);
+          $this->getBusyDaysWithinRentalPeriod($rentalStart, $rentalEnd, $nextRentalStart ?? null);
       }
     }
 
